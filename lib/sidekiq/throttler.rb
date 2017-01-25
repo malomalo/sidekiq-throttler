@@ -60,7 +60,7 @@ module Sidekiq
           nil
         else
           work = Sidekiq.redis { |conn| conn.brpop(*queues_to_check) }
-          UnitOfWork.new(*work) if work
+          Sidekiq::BasicFetch::UnitOfWork.new(*work) if work
         end
       end
 
