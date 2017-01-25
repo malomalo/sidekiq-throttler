@@ -2,7 +2,8 @@ require 'sidekiq'
 require 'sidekiq/fetch'
 
 module Sidekiq
-
+  @rate_limits = {}
+  
   def self.rate_limit(queue, options)
     if options.keys.sort != [:at, :per]
       raise ArgumentError.new("Mising either :at or :per in options")
@@ -65,7 +66,7 @@ module Sidekiq
 
       def queues_cmd
         queues_to_check = super
-        queues_to_check.pop unless @strictly_ordered_queues
+        queues_to_check.pop if @strictly_ordered_queues
         queues_to_check.map! {|q| q.sub(/^queue:/, '') }
 
         limited_queues = []
