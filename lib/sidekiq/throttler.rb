@@ -66,7 +66,7 @@ module Sidekiq
 
       def queues_cmd
         queues_to_check = super
-        queues_to_check.pop if @strictly_ordered_queues
+        queues_to_check.pop unless @strictly_ordered_queues
         queues_to_check.map! {|q| q.sub(/^queue:/, '') }
 
         limited_queues = []
@@ -80,6 +80,7 @@ module Sidekiq
         end
         limited_queues.each { |q| Sidekiq.gc_rate_limit_data_for_queue(q) }
 
+        open_queues.map! { |q| "queue:#{q}" }
         open_queues.push(TIMEOUT) unless open_queues.empty?
         open_queues
       end
