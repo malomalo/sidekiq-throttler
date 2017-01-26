@@ -1,0 +1,39 @@
+<h3><%= t('Queues') %></h3>
+
+<div class="table_container">
+  <table class="queues table table-hover table-bordered table-striped table-white">
+    <thead>
+      <th><%= t('Queue') %></th>
+      <th><%= t('Size') %></th>
+      <th><%= t('Rate Limit') %></th>
+      <th><%= t('Actions') %></th>
+    </thead>
+    <% @queues.each do |queue| %>
+      <tr>
+        <td>
+          <a href="<%= root_path %>queues/<%= CGI.escape(queue.name) %>"><%= h queue.name %></a>
+          <% if queue.paused? %>
+            <span class="label label-danger"><%= t('Paused') %></span>
+          <% end %>
+          <% if queue.throttled? %>
+            <span class="label label-danger"><%= t('Throttled') %></span>
+          <% end %>
+        </td>
+        <td><%= number_with_delimiter(queue.size) %> </td>
+        <td>
+          <% if queue.rate_limited? %>
+              <%= queue.rate_limit %> per <%= queue.rate_limit_over %>
+          <% else %>
+              -
+          <% end %>
+        </td>
+        <td class="delete-confirm">
+          <form action="<%=root_path %>queues/<%= CGI.escape(queue.name) %>" method="post">
+            <%= csrf_tag %>
+            <input class="btn btn-danger btn-xs" type="submit" name="delete" value="<%= t('Delete') %>" data-confirm="<%= t('AreYouSureDeleteQueue', :queue => h(queue.name)) %>" />
+          </form>
+        </td>
+      </tr>
+    <% end %>
+  </table>
+</div>

@@ -112,10 +112,39 @@ module Sidekiq
   end
 end
 
+class Sidekiq::Queue
+  
+  def throttled?
+    if rate_limited?
+      rate >= rate_limit
+    else
+      false
+    end
+  end
+  
+  def rate_limited?
+    Sidekiq.queue_rate_limited?(name)
+  end
+  
+  def rate_limit
+    Sidekiq.queue_rate_limit(name)[:at]
+  end
+  
+  def rate_limit_over
+    Sidekiq.queue_rate_limit(name)[:per]
+  end
+  
+  def rate
+    @rate ||= Sidekiq.queue_rate(name)
+  end
+  
+end
 
 Sidekiq::BasicFetch.prepend(Sidekiq::Throttler::Fetcher)
 Sidekiq.configure_server do |config|
-  config.server_middleware do |chain|
-    chain.add Sidekiq::Throttler::Middleware
+  config.on(:startup) do
+    config.server_middleware do |chain|
+      chain.add Sidekiq::Throttler::Middleware
+    end
   end
 end
