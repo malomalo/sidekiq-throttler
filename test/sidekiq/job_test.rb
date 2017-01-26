@@ -34,7 +34,7 @@ class Sidekiq::JobTest < ActiveSupport::TestCase
     
     travel_to Time.now do
       redis_expects(:hmset).with("throttler:jobs:#{jid}", "started_at", Time.now.to_i).never
-      redis_expects(:sadd).with("throttler:myqueue_uuids", jid).never
+      redis_expects(:sadd).with("throttler:myqueue_jids", jid).never
       redis_expects(:hmset).with("throttler:jobs:#{jid}", "ended_at", Time.now.to_i).never
       
       MyOtherJob.perform_one#fetch_and_execute_job(:myqueue)
@@ -48,7 +48,7 @@ class Sidekiq::JobTest < ActiveSupport::TestCase
     
     travel_to Time.now do
       redis_expects(:hmset).with("throttler:jobs:#{jid}", "started_at", Time.now.to_i).once
-      redis_expects(:sadd).with("throttler:myqueue_uuids", jid).once
+      redis_expects(:sadd).with("throttler:myqueue_jids", jid).once
       redis_expects(:hmset).with("throttler:jobs:#{jid}", "ended_at", Time.now.to_i).once
 
       MyJob.perform_one
@@ -62,7 +62,7 @@ class Sidekiq::JobTest < ActiveSupport::TestCase
 
     travel_to Time.now do
       redis_expects(:hmset).with("throttler:jobs:#{jid}", "started_at", Time.now.to_i).once
-      redis_expects(:sadd).with("throttler:myqueue_uuids", jid).once
+      redis_expects(:sadd).with("throttler:myqueue_jids", jid).once
       redis_expects(:hmset).with("throttler:jobs:#{jid}", "ended_at", Time.now.to_i).once
 
       assert_raises(ArgumentError) {

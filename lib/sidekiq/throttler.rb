@@ -16,7 +16,7 @@ module Sidekiq
   end
 
   def self.queue_rate(queue)
-    redis { |conn| conn.scard("throttler:#{queue}_uuids") }
+    redis { |conn| conn.scard("throttler:#{queue}_jids") }
   end
 
   def self.queue_rate_limit(queue)
@@ -35,14 +35,14 @@ module Sidekiq
     return unless queue_rate_limited?(queue)
 
     limit = queue_rate_limit(queue)
-    queue_key = "throttler:#{queue}_uuids"
+    queue_key = "throttler:#{queue}_jids"
 
     redis do |conn|
-      conn.smembers(queue_key).each do |uuid|
-        job_ended_at = conn.hmget("throttler:jobs:#{uuid}", "ended_at")[0]
+      conn.smembers(queue_key).each do |jid|
+        job_ended_at = conn.hmget("throttler:jobs:#{jid}", "ended_at")[0]
         if job_ended_at && job_ended_at.to_i < Time.now.to_i - limit[:per]
-          conn.srem(queue_key, uuid)
-          conn.del("throttler:jobs:#{uuid}")
+          conn.srem(queue_key, jid)
+          conn.del("throttler:jobs:#{jid}")
         end
       end
     end
@@ -96,7 +96,7 @@ module Sidekiq
         if Sidekiq.queue_rate_limited?(queue)
           Sidekiq.redis do |conn|
             conn.hmset("throttler:jobs:#{worker.jid}", "started_at", Time.now.to_i)
-            conn.sadd("throttler:#{queue}_uuids", worker.jid)
+            conn.sadd("throttler:#{queue}_jids", worker.jid)
           end
         end
 

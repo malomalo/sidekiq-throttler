@@ -20,11 +20,11 @@ class SidekiqTest < ActiveSupport::TestCase
   test "Sidekiq::queue_at_or_over_rate_limit?" do
     Sidekiq.rate_limit(:myqueue, :at => 10, :per => 1)
 
-    redis_expects(:scard).with("throttler:myqueue_uuids").returns(5).twice
+    redis_expects(:scard).with("throttler:myqueue_jids").returns(5).twice
     assert !Sidekiq.queue_at_or_over_rate_limit?(:myqueue)
     assert !Sidekiq.queue_at_or_over_rate_limit?("myqueue")
         
-    redis_expects(:scard).with("throttler:myqueue_uuids").returns(10).twice
+    redis_expects(:scard).with("throttler:myqueue_jids").returns(10).twice
     assert Sidekiq.queue_at_or_over_rate_limit?(:myqueue)
     assert Sidekiq.queue_at_or_over_rate_limit?("myqueue")
   end
@@ -54,8 +54,8 @@ class SidekiqTest < ActiveSupport::TestCase
   
   test "Sidekiq::gc_rate_limit_data_for_queue" do
     Sidekiq.rate_limit(:myqueue, :at => 10, :per => 5)
-    redis_expects(:smembers).with("throttler:myqueue_uuids").returns(["1","2","3"]).once
-    redis_expects(:srem).with("throttler:myqueue_uuids", "1").once
+    redis_expects(:smembers).with("throttler:myqueue_jids").returns(["1","2","3"]).once
+    redis_expects(:srem).with("throttler:myqueue_jids", "1").once
     redis_expects(:del).with("throttler:jobs:1").once
     
     travel_to Time.now do
