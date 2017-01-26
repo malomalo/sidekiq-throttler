@@ -5,6 +5,7 @@
     <thead>
       <th><%= t('Queue') %></th>
       <th><%= t('Size') %></th>
+      <th><%= t('Rate') %></th>
       <th><%= t('Rate Limit') %></th>
       <th><%= t('Actions') %></th>
     </thead>
@@ -20,6 +21,13 @@
           <% end %>
         </td>
         <td><%= number_with_delimiter(queue.size) %> </td>
+        <td>
+          <% if queue.rate_limited? %>
+              <%= queue.rate %>
+          <% else %>
+              -
+          <% end %>
+        </td>
         <td>
           <% if queue.rate_limited? %>
               <%= queue.rate_limit %> per <%= queue.rate_limit_over %>

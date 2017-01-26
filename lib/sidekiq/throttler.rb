@@ -81,7 +81,7 @@ module Sidekiq
         limited_queues.each { |q| Sidekiq.gc_rate_limit_data_for_queue(q) }
 
         open_queues.map! { |q| "queue:#{q}" }
-        open_queues.push(TIMEOUT) unless open_queues.empty?
+        open_queues.push(TIMEOUT) if !open_queues.empty? && !@strictly_ordered_queues
         open_queues
       end
     end
