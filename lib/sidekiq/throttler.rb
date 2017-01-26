@@ -51,7 +51,7 @@ module Sidekiq
   module Throttler
 
     module Fetcher
-      TIMEOUT = 1
+      TIMEOUT = 2
       
       def retrieve_work
         queues_to_check = queues_cmd
@@ -66,7 +66,7 @@ module Sidekiq
 
       def queues_cmd
         queues_to_check = super
-        queues_to_check.pop unless @strictly_ordered_queues
+        queues_to_check.pop
         queues_to_check.map! {|q| q.sub(/^queue:/, '') }
 
         limited_queues = []
@@ -81,7 +81,7 @@ module Sidekiq
         limited_queues.each { |q| Sidekiq.gc_rate_limit_data_for_queue(q) }
 
         open_queues.map! { |q| "queue:#{q}" }
-        open_queues.push(TIMEOUT) if !open_queues.empty? && !@strictly_ordered_queues
+        open_queues.push(TIMEOUT) if !open_queues.empty?
         open_queues
       end
     end
@@ -135,7 +135,8 @@ class Sidekiq::Queue
   end
   
   def rate
-    @rate ||= Sidekiq.queue_rate(name)
+    Sidekiq.gc_rate_limit_data_for_queue(name)
+    Sidekiq.queue_rate(name)
   end
   
 end
