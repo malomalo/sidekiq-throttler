@@ -47,9 +47,8 @@ class Sidekiq::JobTest < ActiveSupport::TestCase
     jid = MyJob.perform_async
     
     travel_to Time.now do
-      redis_expects(:hmset).with("throttler:jobs:#{jid}", "started_at", Time.now.to_i).once
-      redis_expects(:sadd).with("throttler:myqueue_jids", jid).once
-      redis_expects(:hmset).with("throttler:jobs:#{jid}", "ended_at", Time.now.to_i).once
+      redis_expects(:hmset).with("throttler:myqueue_jids", jid, "S#{Time.now.to_i}").once
+      redis_expects(:hmset).with("throttler:myqueue_jids", jid, "E#{Time.now.to_i}").once
 
       MyJob.perform_one
     end
@@ -61,9 +60,8 @@ class Sidekiq::JobTest < ActiveSupport::TestCase
     jid = MyErrorJob.perform_async
 
     travel_to Time.now do
-      redis_expects(:hmset).with("throttler:jobs:#{jid}", "started_at", Time.now.to_i).once
-      redis_expects(:sadd).with("throttler:myqueue_jids", jid).once
-      redis_expects(:hmset).with("throttler:jobs:#{jid}", "ended_at", Time.now.to_i).once
+      redis_expects(:hmset).with("throttler:myqueue_jids", jid, "S#{Time.now.to_i}").once
+      redis_expects(:hmset).with("throttler:myqueue_jids", jid, "E#{Time.now.to_i}").once
 
       assert_raises(ArgumentError) {
         MyErrorJob.perform_one

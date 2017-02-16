@@ -16,7 +16,7 @@ module Sidekiq
   end
 
   def self.queue_rate(queue)
-    redis { |conn| conn.scard("throttler:#{queue}_jids") }
+    redis { |conn| conn.hlen("throttler:#{queue}_jids") }
   end
 
   def self.queue_rate_limit(queue)
@@ -38,13 +38,15 @@ module Sidekiq
     queue_key = "throttler:#{queue}_jids"
 
     redis do |conn|
-      conn.smembers(queue_key).each do |jid|
-        job_ended_at = conn.hmget("throttler:jobs:#{jid}", "ended_at")[0]
-        if job_ended_at && job_ended_at.to_i < Time.now.to_i - limit[:per]
-          conn.srem(queue_key, jid)
-          conn.del("throttler:jobs:#{jid}")
+      removeable_jids = []
+      conn.hgetall(queue_key).each do |jid, time|
+        if time.start_with?('S')
+        elsif time.start_with?('E') && time[1..-1].to_i < Time.now.to_i - limit[:per]
+          removeable_jids << jid
         end
       end
+      
+      conn.hdel(queue_key, *removeable_jids) unless removeable_jids.empty?
     end
   end
 
@@ -95,15 +97,14 @@ module Sidekiq
       def call(worker, msg, queue)
         if Sidekiq.queue_rate_limited?(queue)
           Sidekiq.redis do |conn|
-            conn.hmset("throttler:jobs:#{worker.jid}", "started_at", Time.now.to_i)
-            conn.sadd("throttler:#{queue}_jids", worker.jid)
+            conn.hmset("throttler:#{queue}_jids", worker.jid, "S#{Time.now.to_i}")
           end
         end
 
         yield
       ensure
         if Sidekiq.queue_rate_limited?(queue)
-          Sidekiq.redis { |conn| conn.hmset("throttler:jobs:#{worker.jid}", "ended_at", Time.now.to_i) }
+          Sidekiq.redis { |conn| conn.hmset("throttler:#{queue}_jids", worker.jid, "E#{Time.now.to_i}") }
         end
       end
 
