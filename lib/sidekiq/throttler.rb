@@ -46,7 +46,7 @@ module Sidekiq
         end
       end
       
-      conn.hdel(queue_key, *removeable_jids) unless removeable_jids.empty?
+      conn.hdel(queue_key, removeable_jids) unless removeable_jids.empty?
     end
   end
 
